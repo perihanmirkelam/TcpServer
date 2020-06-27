@@ -9,9 +9,11 @@ class TcpClientHandler(private val dataInputStream: DataInputStream, private val
     override fun run() {
         while (true) {
             try {
-                Log.i(TAG, "Received: " + dataInputStream.readUTF())
-                dataOutputStream.writeUTF("Hello Client")
-                sleep(2000L)
+                if(dataInputStream.available() > 0){
+                    Log.i(TAG, "Received: " + dataInputStream.readUTF())
+                    dataOutputStream.writeUTF("Hello Client")
+                    sleep(2000L)
+                }
             } catch (e: IOException) {
                 e.printStackTrace()
                 try {

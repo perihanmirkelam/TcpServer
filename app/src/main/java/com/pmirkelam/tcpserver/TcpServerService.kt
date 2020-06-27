@@ -22,27 +22,29 @@ class TcpServerService : Service() {
     private var serverSocket: ServerSocket? = null
     private val working = AtomicBoolean(true)
     private val runnable = Runnable {
-        while (working.get()) {
-            var socket: Socket? = null
-            try {
+        var socket: Socket? = null
+        try {
+            serverSocket = ServerSocket(PORT)
+            while (working.get()) {
                 if (serverSocket != null) {
                     socket = serverSocket!!.accept()
                     Log.i(TAG, "New client: $socket")
                     val dataInputStream = DataInputStream(socket.getInputStream())
                     val dataOutputStream = DataOutputStream(socket.getOutputStream())
+
                     // Use threads for each client to communicate with them simultaneously
                     val t: Thread = TcpClientHandler(dataInputStream, dataOutputStream)
                     t.start()
                 } else {
                     Log.e(TAG, "Couldn't create ServerSocket!")
                 }
-            } catch (e: Exception) {
-                try {
-                    socket?.close()
-                } catch (ex: IOException) {
-                    ex.printStackTrace()
-                }
-                e.printStackTrace()
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            try {
+                socket?.close()
+            } catch (ex: IOException) {
+                ex.printStackTrace()
             }
         }
     }
@@ -53,11 +55,6 @@ class TcpServerService : Service() {
 
     override fun onCreate() {
         startMeForeground()
-        try {
-            serverSocket = ServerSocket(PORT)
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
         Thread(runnable).start()
     }
 
@@ -72,8 +69,7 @@ class TcpServerService : Service() {
             val chan = NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE)
             chan.lightColor = Color.BLUE
             chan.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            // assert(manager != null)
+            val manager = (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
             manager.createNotificationChannel(chan)
             val notificationBuilder = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
             val notification = notificationBuilder.setOngoing(true)
@@ -89,7 +85,7 @@ class TcpServerService : Service() {
     }
 
     companion object {
-        private const val TAG: String = "ServerSocketService"
+        private val TAG = TcpServerService::class.java.simpleName
         private const val PORT = 9876
     }
 }
